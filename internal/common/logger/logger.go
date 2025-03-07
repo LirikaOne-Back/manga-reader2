@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"context"
 	"io"
 	"log/slog"
 	"os"
@@ -14,7 +13,7 @@ type Logger interface {
 	Info(msg string, args ...any)
 	Warn(msg string, args ...any)
 	Error(msg string, args ...any)
-	WithContext(ctx context.Context) Logger
+	With(args ...any) Logger
 	WithFields(fields map[string]interface{}) Logger
 }
 
@@ -59,8 +58,7 @@ func NewLogger(level string) Logger {
 	}
 }
 
-// NewLoggerWithOutput создает новый экземпляр логгера с указанным writer'ом
-// Полезно для тестирования
+// NewLoggerWithOutput создает новый экземпляр логгера с указанным writer
 func NewLoggerWithOutput(level string, w io.Writer) Logger {
 	var logLevel slog.Level
 
@@ -110,10 +108,10 @@ func (l *slogLogger) Error(msg string, args ...any) {
 	l.logger.Error(msg, args...)
 }
 
-// WithContext добавляет контекст к логгеру
-func (l *slogLogger) WithContext(ctx context.Context) Logger {
+// With добавляет дополнительные поля к логгеру
+func (l *slogLogger) With(args ...any) Logger {
 	return &slogLogger{
-		logger: l.logger.WithContext(ctx),
+		logger: l.logger.With(args...),
 	}
 }
 
