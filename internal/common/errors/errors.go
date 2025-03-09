@@ -1,6 +1,7 @@
 package errors
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 )
@@ -214,4 +215,51 @@ func NewJWTExpiredError() *AppError {
 		Message:    "Срок действия токена авторизации истек",
 		StatusCode: http.StatusUnauthorized,
 	}
+}
+
+// IsErrorCode проверяет, соответствует ли ошибка указанному коду ошибки
+func IsErrorCode(err error, code ErrorCode) bool {
+	var appErr *AppError
+	if errors.As(err, &appErr) {
+		return appErr.Code == code
+	}
+	return false
+}
+
+// IsNotFoundError проверяет, является ли ошибка ошибкой "не найдено"
+func IsNotFoundError(err error) bool {
+	return IsErrorCode(err, ErrorCodeNotFound) ||
+		IsErrorCode(err, ErrorCodeMangaNotFound) ||
+		IsErrorCode(err, ErrorCodeChapterNotFound) ||
+		IsErrorCode(err, ErrorCodePageNotFound) ||
+		IsErrorCode(err, ErrorCodeUserNotFound)
+}
+
+// IsValidationError проверяет, является ли ошибка ошибкой валидации
+func IsValidationError(err error) bool {
+	return IsErrorCode(err, ErrorCodeValidation)
+}
+
+// IsConflictError проверяет, является ли ошибка ошибкой конфликта
+func IsConflictError(err error) bool {
+	return IsErrorCode(err, ErrorCodeConflict) ||
+		IsErrorCode(err, ErrorCodeUserExists)
+}
+
+// IsDatabaseError проверяет, является ли ошибка ошибкой базы данных
+func IsDatabaseError(err error) bool {
+	return IsErrorCode(err, ErrorCodeDatabase)
+}
+
+// IsUnauthorizedError проверяет, является ли ошибка ошибкой авторизации
+func IsUnauthorizedError(err error) bool {
+	return IsErrorCode(err, ErrorCodeUnauthorized) ||
+		IsErrorCode(err, ErrorCodeJWTInvalid) ||
+		IsErrorCode(err, ErrorCodeJWTExpired) ||
+		IsErrorCode(err, ErrorCodeInvalidCreds)
+}
+
+// IsForbiddenError проверяет, является ли ошибка ошибкой доступа
+func IsForbiddenError(err error) bool {
+	return IsErrorCode(err, ErrorCodeForbidden)
 }

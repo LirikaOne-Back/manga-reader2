@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: manga-reader-app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - manga-uploads:/app/uploads
+    environment:
+      - SERVER_HOST=
+      - SERVER_PORT=8080
+      - SERVER_READ_TIMEOUT=10
+      - SERVER_WRITE_TIMEOUT=10
+      - SERVER_SHUTDOWN_TIMEOUT=10
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=manga_user
+      - POSTGRES_PASSWORD=manga_password
+      - POSTGRES_DB=manga_reader
+      - POSTGRES_SSLMODE=disable
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=
+      - REDIS_DB=0
+      - JWT_SECRET=your_super_secret_key_change_in_production
+      - JWT_EXPIRATION_HOURS=24
+      - JWT_REFRESH_SECRET=your_super_refresh_secret_key_change_in_production
+      - JWT_REFRESH_EXPIRATION_DAYS=7
+      - LOG_LEVEL=info
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - manga-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: manga-reader-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=manga_user
+      - POSTGRES_PASSWORD=manga_password
+      - POSTGRES_DB=manga_reader
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - manga-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U manga_user -d manga_reader"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: manga-reader-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - manga-network
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Временно отключаем swagger, чтобы сосредоточиться на API
+  # swagger:
+  #   image: swaggerapi/swagger-ui
+  #   container_name: manga-reader-swagger
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8081:8080"
+  #   environment:
+  #     - SWAGGER_JSON=/app/swagger/swagger.json
+  #   volumes:
+  #     - ./docs/swagger:/app/swagger
+  #   networks:
+  #     - manga-network
+
+volumes:
+  manga-uploads:
+  postgres-data:
+  redis-data:
+
+networks:
+  manga-network:
+    driver: bridge
